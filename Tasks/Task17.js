@@ -10,7 +10,7 @@ const App = () => {
 
   return (
     <View style={styles.container}>
-      <Button title={'click'} onPress={toggleVisibility} />
+      <Button title={isVisible ? 'Hide' : 'Show'} onPress={toggleVisibility} />
       {isVisible && <Text style={styles.text}>My name is Obieda Khalil</Text>}
     </View>
   );
