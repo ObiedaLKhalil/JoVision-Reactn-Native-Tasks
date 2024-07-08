@@ -1,25 +1,27 @@
 import React, { useRef,useImperativeHandle,useState,useEffect,Component,forwardRef} from 'react';
 import { StyleSheet,TextInput,Text, View} from 'react-native';
 import Task24part1 from './Task24part1';
+import ChildComponent from './Task24part1';
  // Parent Component
-  const ParentComponent = forwardRef((props, ref) => {
-    const [textt, onChangeText] = React.useState('enter your text ');
-  
+  const ParentComponent = ()=>{
+    
+    const childRef = useRef();
+   
     return (
       
-      <>
+      
          <View style={styles.container}>
         <TextInput
           style={styles.input}
-          onChangeText={onChangeText}
-          value={textt}
+          onChangeText={childRef.current?.ChangeText}
+         // value={childRef.current ? childRef.current?.ChangeText : ''}
         />
-        <Text style={styles.text}>{textt}</Text>
+          <ChildComponent ref={childRef} /> 
         </View>
     
-      </>
+      
     );
-  });
+  };
   const styles = StyleSheet.create({
     container: {
       flex: 1,
