@@ -4,9 +4,9 @@ import Video, {VideoRef} from 'react-native-video';
 
 const DisplayVideo = () => {
     
-        const [isPlaying, setIsPlaying] = useState(false);
-        const [isImageVisible, setIsImageVisible] = useState(true);
-        const VideoPlay = () => {
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [isImageVisible, setIsImageVisible] = useState(true);
+     const VideoPlay = () => {
           setIsPlaying(!isPlaying);
           setIsImageVisible(false); 
         };
@@ -14,14 +14,9 @@ const DisplayVideo = () => {
     const onBuffer = (buffer) => {
         console.log('Buffering', buffer);
         setIsBuffering(buffer.isBuffering);
-    
       };
-      
-
   return (
     <View style={styles.container}>
- 
-
       <Video
         source={require('../Resource/v1.mp4')} 
         style={styles.video}
@@ -34,7 +29,6 @@ const DisplayVideo = () => {
         <Image source={require('../Resource/images.jpg')} style={styles.image} />
       </TouchableOpacity>
     )}
-
     </View>
   );
 };
@@ -59,10 +53,9 @@ var styles = StyleSheet.create({
       
     },
     image: {
-        width: 300,
-        height: 300,
-        marginBottom: 20,
-        borderRadius: 10,
+      width: 298,
+    height: 170,
+      position: 'absolute',bottom:15,left:-149,
       },
   
     container: {
