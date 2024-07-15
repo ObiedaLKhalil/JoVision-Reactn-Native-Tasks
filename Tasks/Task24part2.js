@@ -13,7 +13,7 @@ import ChildComponent from './Task24part1';
          <View style={styles.container}>
         <TextInput
           style={styles.input}
-          onChangeText={childRef.current?.ChangeText}
+          onChangeText={(newT)=>childRef.current.ChangeText(newT)}
          // value={childRef.current ? childRef.current?.ChangeText : ''}
         />
           <ChildComponent ref={childRef} /> 
