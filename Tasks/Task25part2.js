@@ -7,12 +7,12 @@ import ChildComponent from './Task24part1';
     const childRef = useRef();
    
     return (
-      
+     
       
          <View style={styles.container}>
         <TextInput
           style={styles.input}
-          onChangeText={childRef.ChangeText}
+          onChangeText={(newT)=>childRef.current.ChangeText(newT)}
           //value={childRef.current ? childRef.current.textt : ''}
         />
           <ChildComponent ref={childRef} /> 
