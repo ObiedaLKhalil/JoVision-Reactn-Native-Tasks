@@ -2,29 +2,6 @@ import React, { useRef,useImperativeHandle,useState,useEffect,Component,forwardR
 import { StyleSheet,TextInput,Text, View} from 'react-native';
 
 // Child Component
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class ChildComponentClass extends Component {
     constructor(props) {
       super(props);
