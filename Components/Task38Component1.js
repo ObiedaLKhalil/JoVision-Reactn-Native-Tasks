@@ -3,10 +3,11 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SharedTextContext } from '../Components/ContextProviderTask38';
 
 class MyClassPage extends Component {
-  static contextType = SharedTextContext;
+ static contextType = SharedTextContext;
 
   render() {
     const { sharedText } = this.context;
+    
     return (
       <View style={styles.container}>
         <Text style={styles.text}>{sharedText }</Text>
@@ -23,7 +24,8 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 30,
-    marginTop: 20,
+    color:"red",
+    marginTop: 10,
   },
 });
 

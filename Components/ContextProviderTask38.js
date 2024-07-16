@@ -6,7 +6,7 @@ const SharedTextContext = createContext();
 
 // Create a Provider component
 const SharedTextProvider = ({ children }) => {
-  const [sharedText, setSharedText] = useState('');
+  const [sharedText, setSharedText] = useState('Enter what you want');
 
   return (
     <SharedTextContext.Provider value={{ sharedText, setSharedText }}>

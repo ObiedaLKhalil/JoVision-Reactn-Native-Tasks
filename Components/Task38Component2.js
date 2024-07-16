@@ -3,7 +3,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 import MyClassPage from '../Components/Task38Component1';
 import { SharedTextContext } from '../Components/ContextProviderTask38';;
 
-const ComponentTwo = () => {
+const Component2 = () => {
   const { sharedText, setSharedText } = useContext(SharedTextContext);
 
   return (
@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderColor: '#993366',
     borderWidth: 1,
-    marginBottom: 30,
+    marginBottom: 15,
     paddingHorizontal: 8,
     borderTopWidth: 4,
     borderBottomWidth: 4,
@@ -39,4 +39,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ComponentTwo;
+export default Component2;
