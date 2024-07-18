@@ -1,9 +1,9 @@
-import Task39 from './Tasks/Task39';
+import Task40 from './Tasks/Task40';
 
 const App = () => {
   return (
  
-    <Task39/>  
+    <Task40/>  
   );
 };
 
