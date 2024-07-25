@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import {SafeAreaView,StyleSheet, Button, Image, PermissionsAndroid, Platform, Alert } from 'react-native';
+import {SafeAreaView,StyleSheet, Button, Image, PermissionsAndroid, Platform, Alert,View,Text } from 'react-native';
 import { launchCamera } from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import Geolocation from 'react-native-geolocation-service';
+import { accelerometer, setUpdateIntervalForType, SensorTypes } from 'react-native-sensors';
+import { map, filter } from 'rxjs/operators';
 const Tab = createBottomTabNavigator();
 const App = () => {
   const [photo, setPhoto] = useState(null);
-
+  const [location, setLocation] = useState(null);
+  const [orientation, setOrientation] = useState({ x: 0, y: 0, z: 0 });
   const requestPermissions = async () => {
     try {
       // Request camera permission
@@ -120,7 +124,35 @@ const App = () => {
       console.error('Error deleting file:', error);
     }
   };
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Location Permission',
+            message: 'This app needs access to your location for [purpose]',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          }
+        );
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('You can use the location');
+          return true;
+        } else {
+          console.log('Location permission denied');
+          return false;
+        }
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true; // For iOS or other platforms, return true by default
+  };
   
+     
   const Screen1 = ({ navigation }) => (
     <SafeAreaView style={styles.container}>
   
@@ -129,10 +161,77 @@ const App = () => {
       
     </SafeAreaView>
   );
+   const Screen2 = ({ navigation }) => {
+    useEffect(()  => {
+     
+    
+      // Request location permission and get location updates
+      const getLocation = () => {
+        const locationPermission =  requestLocationPermission();
+        if (!locationPermission) {
+          console.log('Storage permission denied');
+          return;
+        }
+        Geolocation.getCurrentPosition(
+          (position) => {
+            setLocation(position);
+          },
+          (error) => {
+            console.error(error);
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+        );
+      };
+  
+      // Get initial location
+      getLocation();
+  
+      // Set interval for location updates
+      const locationInterval = setInterval(getLocation, 10000);
+  
+      // Set update interval for orientation
+      setUpdateIntervalForType(SensorTypes.accelerometer, 500);
+      const accelerometerSubscription = accelerometer
+      .pipe(
+        map(({ x, y, z }) => ({ x, y, z })),
+        filter(({ x, y, z }) => x !== null && y !== null && z !== null)
+      )
+      .subscribe(
+        (orientationData) => {
+          setOrientation(orientationData);
+        },
+        (error) => {
+          console.error(error);
+        }
+      );
+            return () => {
+              clearInterval(locationInterval);
+              accelerometerSubscription.unsubscribe();
+              
+            };
+          }, []);
+          
+  
+return(
+    <SafeAreaView style={styles.container}>
+    {  location && <View>
+      <Text>Latitude: {location.coords.latitude}</Text>
+      <Text>Longitude: {location.coords.longitude}</Text>
+      <Text>Altitude: {location.coords.altitude}</Text>
+      <Text>Speed: {location.coords.speed}</Text>
+      </View>
+      }
+       <Text>X: {orientation.x}</Text>
+      <Text>Y: {orientation.y}</Text>
+      <Text>Z: {orientation.z}</Text>
+    </SafeAreaView>
+  );};
+
   return (
     <NavigationContainer>
     <Tab.Navigator initialRouteName="Screen1" >
       <Tab.Screen name="Screen1" component={Screen1}   options={{  title: 'Camera', headerTitleAlign: 'center',headerTintColor:"blue" }} />
+      <Tab.Screen name="Screen2" component={Screen2}   options={{  title: 'sensors', headerTitleAlign: 'center',headerTintColor:"blue" }} />
       </Tab.Navigator>
    </NavigationContainer>
   );

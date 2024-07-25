@@ -105,6 +105,8 @@ android {
 }
 
 dependencies {
+     implementation 'com.google.android.gms:play-services-location:21.0.1'
+
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
@@ -114,5 +116,6 @@ dependencies {
         implementation jscFlavor
     }
 }
+
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
