@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {SafeAreaView,StyleSheet, Button, Image, PermissionsAndroid, Platform, Alert,View,Text } from 'react-native';
+import React, { useState, useEffect,useRef } from 'react';
+import {SafeAreaView,StyleSheet, Button, Image, PermissionsAndroid, Platform, Alert,View,Text,RefreshControl,FlatList,TouchableOpacity} from 'react-native';
 import { launchCamera } from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
 import { NavigationContainer } from '@react-navigation/native';
@@ -7,15 +7,27 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Geolocation from 'react-native-geolocation-service';
 import { accelerometer, setUpdateIntervalForType, SensorTypes } from 'react-native-sensors';
 import { map, filter } from 'rxjs/operators';
+
+
+
 const Tab = createBottomTabNavigator();
 const App = () => {
   const [photo, setPhoto] = useState(null);
   const [location, setLocation] = useState(null);
   const [orientation, setOrientation] = useState({ x: 0, y: 0, z: 0 });
-  const requestPermissions = async () => {
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [loadedPhotos, setLoadedPhotos] = useState([]);
+  const [loadedPhotos1, setLoadedPhotos1] = useState([]);
+  const flatListRef1 = useRef(null);
+  const flatListRef = useRef(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const intervalRef = useRef(null);
+
+  const requestPermissions =async  () => {
     try {
       // Request camera permission
-      const cameraGranted = await PermissionsAndroid.request(
+      const cameraGranted =  await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.CAMERA,
         {
           title: 'Camera Permission',
@@ -69,10 +81,11 @@ const App = () => {
       }
     });
   };  
-  const savePhoto = async (photoUri) => {
+  const savePhoto =  (photoUri) => {
     try {
+      
       const filePath =  `${RNFS.ExternalStorageDirectoryPath}/Pictures/${Date.now()}.jpg`;
-      await RNFS.moveFile(photoUri, filePath);
+       RNFS.moveFile(photoUri, filePath);
       console.log('Photo saved to gallery:', filePath);
     } catch (error) {
       console.error('Error saving photo:', error);
@@ -80,10 +93,10 @@ const App = () => {
     
     takePhoto();
   };
-  const requestStoragePermissionToDelete = async () => {
+  const requestStoragePermissionToDelete =async  () => {
     if (Platform.OS === 'android') {
       try {
-        const granted = await PermissionsAndroid.request(
+        const granted =await  PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
           {
             title: 'Storage Permission',
@@ -102,18 +115,18 @@ const App = () => {
     return true;
   };
   
-  const deletePhoto = async (photoUri) => {
+  const deletePhoto =  (photoUri) => {
     try {
-      const hasPermission = await requestStoragePermissionToDelete();
+      const hasPermission =  requestStoragePermissionToDelete();
       if (!hasPermission) {
         console.log('Storage permission denied');
         return;
       }
       const filePath = photoUri.startsWith('file://') ? photoUri.replace('file://', '') : photoUri;
       console.log('Deleting file at path:', filePath);
-      const fileExists = await RNFS.exists(filePath);
+      const fileExists =  RNFS.exists(filePath);
       if (fileExists) {
-        await RNFS.unlink(filePath);
+         RNFS.unlink(filePath);
         console.log('File deleted');
       
         setPhoto(null);
@@ -124,10 +137,10 @@ const App = () => {
       console.error('Error deleting file:', error);
     }
   };
-  const requestLocationPermission = async () => {
+  const requestLocationPermission =async  () => {
     if (Platform.OS === 'android') {
       try {
-        const granted = await PermissionsAndroid.request(
+        const granted =await  PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {
             title: 'Location Permission',
@@ -151,8 +164,92 @@ const App = () => {
     }
     return true; // For iOS or other platforms, return true by default
   };
-  
-     
+
+  const requestStoragePermissionToLoad =async ()=>{
+    if (Platform.OS === 'android') {
+      try {
+        const granted =await  PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Storage Permission',
+          message: 'This app needs access to your storage',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+          }
+        );
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('You can access to the storage');
+          return true;
+        } else {
+          console.log('storage permission denied');
+          return false;
+        }
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true; // For iOS or other platforms, return true by defaul
+  };
+  const loadPhotosFunction = async () => {
+    const loadedPermission =  requestStoragePermissionToLoad();
+        if (!loadedPermission) {
+          console.log('Storage permission denied');
+          return;
+        }
+        
+    try {
+      const files = await RNFS.readDir(RNFS.ExternalStorageDirectoryPath + '/Pictures');
+      const imageFiles = files.filter(file => file.isFile() && /\.(jpe?g|png)$/i.test(file.name));
+      setLoadedPhotos(imageFiles);
+    } catch (error) {
+      console.error(error);}};
+
+      const loadPhotosFunction1 = async () => {
+        const loadedPermission =  requestStoragePermissionToLoad();
+            if (!loadedPermission) {
+              console.log('Storage permission denied');
+              return;
+            }
+            
+        try {
+          const files = await RNFS.readDir(RNFS.ExternalStorageDirectoryPath + '/Pictures');
+          const imageFiles = files.filter(file => file.isFile() && /\.(jpe?g|png)$/i.test(file.name));
+          setLoadedPhotos1(imageFiles);
+        } catch (error) {
+          console.error(error);}};
+    
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    loadPhotos().then(() => setTimeout(() => {
+      setRefreshing(false);
+  }, 1000));
+   
+}, []);
+
+const startSlideshow = () => {
+  if (loadPhotos.length === 0) return; // Ensure there are photos to display
+  intervalRef.current = setInterval(() => {
+    setCurrentIndex(currentIndex => {
+      const nextIndex = (currentIndex + 1) % loadPhotos.length;
+      if (flatListRef.current) {
+        flatListRef.current.scrollToIndex({ index: nextIndex });
+      }
+      return nextIndex;
+    });
+  }, 1000); // Scroll every second
+};
+const stopSlideshow = () => {
+  if (intervalRef.current) {
+    clearInterval(intervalRef.current);
+  }
+};
+
+const toggleSlideshow = () => {
+  setIsPlaying(!isPlaying);
+
+};
   const Screen1 = ({ navigation }) => (
     <SafeAreaView style={styles.container}>
   
@@ -169,7 +266,7 @@ const App = () => {
       const getLocation = () => {
         const locationPermission =  requestLocationPermission();
         if (!locationPermission) {
-          console.log('Storage permission denied');
+          console.log('location permission denied');
           return;
         }
         Geolocation.getCurrentPosition(
@@ -205,6 +302,7 @@ const App = () => {
         }
       );
             return () => {
+              
               clearInterval(locationInterval);
               accelerometerSubscription.unsubscribe();
               
@@ -226,12 +324,63 @@ return(
       <Text>Z: {orientation.z}</Text>
     </SafeAreaView>
   );};
+  const Screen3 = ({ navigation }) => {
+    useEffect(()  => {
+      loadPhotosFunction();
+  }, []);
+    return(
+      <SafeAreaView style={styles.container}>
+      <FlatList
+          ref={flatListRef}
+          data={loadedPhotos}
+          renderItem={({ item }) => (
+              <Image   source={{ uri: 'file://' + item.path }} style={styles.image} />
+          )}
+          horizontal={true}
+          showsHorizontalScrollIndicator={true}
+          refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+      />
+  </SafeAreaView>
+  );};
+  const Screen4= ({ navigation }) => {
+    useEffect(() => {
+      loadPhotosFunction1();
+      if (isPlaying) {
+        startSlideshow();
+      } else {
+        stopSlideshow();
+      }
+  
+      return () => stopSlideshow();  // Clean up on unmount
+    }, [isPlaying]); 
+    return(
+      <SafeAreaView style={styles.container}>
+   <Text >Slideshow</Text>
+   <Button title={isPlaying ? 'Pause' : 'Resume'} onPress={toggleSlideshow} color="orange" />
+      <FlatList
+        data={loadedPhotos1}
+        renderItem={({ item }) => (
+          <Image   source={{ uri: 'file://' + item.path }} style={styles.image} />
+      )}
+        horizontal
+       pagingEnabled
+       scrollEnabled={false}
+        ref={flatListRef1}
+      />
+      <TouchableOpacity onPress={toggleSlideshow} >
+      </TouchableOpacity>
+  </SafeAreaView>
+  );};
 
   return (
     <NavigationContainer>
-    <Tab.Navigator initialRouteName="Screen1" >
+    <Tab.Navigator initialRouteName="Screen1" screenOptions={{unmountOnBlur:true}} >
       <Tab.Screen name="Screen1" component={Screen1}   options={{  title: 'Camera', headerTitleAlign: 'center',headerTintColor:"blue" }} />
       <Tab.Screen name="Screen2" component={Screen2}   options={{  title: 'sensors', headerTitleAlign: 'center',headerTintColor:"blue" }} />
+      <Tab.Screen name="Screen3" component={Screen3}   options={{  title: 'gallery', headerTitleAlign: 'center',headerTintColor:"blue" }} />
+      <Tab.Screen name="Screen4" component={Screen4}   options={{  title: 'slideshow', headerTitleAlign: 'center',headerTintColor:"blue" }} />
       </Tab.Navigator>
    </NavigationContainer>
   );
@@ -248,9 +397,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center', // Center text horizontally
   },
+  image: {
+    width: 300,
+    height: 300,
+    marginBottom: 20,
+  },
 });
 export default App;
-
-
-
-
