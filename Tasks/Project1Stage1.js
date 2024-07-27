@@ -21,7 +21,7 @@ const App = () => {
   const flatListRef1 = useRef(null);
   const flatListRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const intervalRef = useRef(null);
 
   const requestPermissions =async  () => {
@@ -222,17 +222,17 @@ const App = () => {
     
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    loadPhotos().then(() => setTimeout(() => {
+    loadPhotosFunction().then(() => setTimeout(() => {
       setRefreshing(false);
   }, 1000));
    
 }, []);
 
 const startSlideshow = () => {
-  if (loadPhotos.length === 0) return; // Ensure there are photos to display
+  if (loadedPhotos1.length === 0) return; // Ensure there are photos to display
   intervalRef.current = setInterval(() => {
     setCurrentIndex(currentIndex => {
-      const nextIndex = (currentIndex + 1) % loadPhotos.length;
+      const nextIndex = (currentIndex + 1) % loadedPhotos1.length;
       if (flatListRef.current) {
         flatListRef.current.scrollToIndex({ index: nextIndex });
       }
@@ -245,11 +245,9 @@ const stopSlideshow = () => {
     clearInterval(intervalRef.current);
   }
 };
-
-const toggleSlideshow = () => {
-  setIsPlaying(!isPlaying);
-
-};
+ const togglePlayPause = () => {
+  loadPhotosFunction1();
+        setIsPlaying(!isPlaying);};
   const Screen1 = ({ navigation }) => (
     <SafeAreaView style={styles.container}>
   
@@ -346,19 +344,37 @@ return(
   );};
   const Screen4= ({ navigation }) => {
     useEffect(() => {
-      loadPhotosFunction1();
-      if (isPlaying) {
-        startSlideshow();
-      } else {
-        stopSlideshow();
-      }
-  
-      return () => stopSlideshow();  // Clean up on unmount
-    }, [isPlaying]); 
+     
+      let timer;
+      if (isPlaying &&  loadedPhotos1.length > 0) {
+          timer = setInterval(() => {
+              setCurrentIndex((prevIndex) => (prevIndex + 1) % loadedPhotos1.length);
+          }, 1000);
+      } 
+      return () => {
+          if (timer) clearInterval(timer);
+      };
+  }, [isPlaying, loadedPhotos1.length]);
+
+   useEffect(() => {
+    if (flatListRef1.current) {
+      flatListRef1.current.scrollToIndex({ index: currentIndex, animated: true });
+    }
+  }, [currentIndex]);
+
+  const onScrollToIndexFailed = (info) => {
+    const wait = new Promise(resolve => setTimeout(resolve, 500));
+    wait.then(() => {
+      flatListRef1.current?.scrollToIndex({ index: info.index, animated: true });
+    });
+  };
     return(
       <SafeAreaView style={styles.container}>
    <Text >Slideshow</Text>
-   <Button title={isPlaying ? 'Pause' : 'Resume'} onPress={toggleSlideshow} color="orange" />
+   <Button title={isPlaying ? 'Pause' : 'Resume'} onPress={togglePlayPause} color="orange" />
+   
+      <TouchableOpacity onPress={togglePlayPause} >
+      {loadedPhotos1.length > 0 ? (
       <FlatList
         data={loadedPhotos1}
         renderItem={({ item }) => (
@@ -366,10 +382,13 @@ return(
       )}
         horizontal
        pagingEnabled
+        onScrollToIndexFailed={onScrollToIndexFailed}
        scrollEnabled={false}
         ref={flatListRef1}
       />
-      <TouchableOpacity onPress={toggleSlideshow} >
+    ) : (
+      <Text>No images available</Text>
+  )}
       </TouchableOpacity>
   </SafeAreaView>
   );};
