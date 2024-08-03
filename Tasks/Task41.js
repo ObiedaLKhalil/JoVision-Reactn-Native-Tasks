@@ -3,6 +3,11 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View } from 'react-native';
 
+//The name of a screen in React Navigation is essential for several reasons:
+
+//Navigation: The name is used to navigate to the screen programmatically. For example, you can use navigation.navigate('Screen1') to move to the screen named “Screen1”.
+
+
 // Create simple screen components
 const Screen1 = () => (
   <View style={styles.container}>

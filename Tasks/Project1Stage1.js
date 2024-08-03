@@ -228,23 +228,7 @@ const App = () => {
    
 }, []);
 
-const startSlideshow = () => {
-  if (loadedPhotos1.length === 0) return; // Ensure there are photos to display
-  intervalRef.current = setInterval(() => {
-    setCurrentIndex(currentIndex => {
-      const nextIndex = (currentIndex + 1) % loadedPhotos1.length;
-      if (flatListRef.current) {
-        flatListRef.current.scrollToIndex({ index: nextIndex });
-      }
-      return nextIndex;
-    });
-  }, 1000); // Scroll every second
-};
-const stopSlideshow = () => {
-  if (intervalRef.current) {
-    clearInterval(intervalRef.current);
-  }
-};
+
  const togglePlayPause = () => {
   loadPhotosFunction1();
         setIsPlaying(!isPlaying);};
