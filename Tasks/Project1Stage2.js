@@ -22,7 +22,7 @@ const App = () => {
     const [loadedPhotos, setLoadedPhotos] = useState([]);
     const [loadedVideos, setLoadedVideos] = useState([]);
     const [refreshing, setRefreshing] = React.useState(false);
-    //const [isPlaying, setIsPlaying] = useState(true);
+    const [isPlaying, setIsPlaying] = useState(true);
     const [loadPhotosVideos,setloadPhotosVideos] = useState([]);
     const [newName,setNewName]=useState("");
     const [visible,setVisible]=useState(false);
@@ -30,9 +30,13 @@ const App = () => {
     const[passItem,setpassItem]=useState(null);
     const[ispassItem,setispassItem]=useState(false);
     const[isnagivate,setisnagivate]=useState(false);
-   // const [isBuffering, setIsBuffering] = useState(false);
+    const[isVideo,setIsVideo]=useState(false);
+    const [isBuffering, setIsBuffering] = useState(false);
+    const [paused, setPaused] = useState(false);
+    const [playbackPosition, setPlaybackPosition] = useState(0);
     const flatListRef1=useRef(null);
    // const flatListRef2=useRef(null);
+    const playerRef = useRef(null);
     const X =5;
     const Y =3;
     const images = {
@@ -40,7 +44,6 @@ const App = () => {
       2: require('../Resource/personWalking.jpg'),
       3: require('../Resource/sittingPerson.png')
     };
-
 const requestStoragePermissionToRename = async () => {
   if (Platform.OS === 'android') {
     try {
@@ -282,7 +285,7 @@ else{
         console.log('File deleted');
       
         setPhoto(null);
-        loadPhotosFunction();
+        loadPhotosVideosFun();
       } else {
         console.log('File does not exist');
       }
@@ -303,7 +306,7 @@ else{
       if (fileExists) {
          RNFS.unlink(filePath);
         console.log('File deleted');
-        loadPhotosFunction();
+        loadPhotosVideosFun();
       } else {
         console.log('File does not exist');
       }
@@ -312,12 +315,9 @@ else{
     }
   };
   const savePhoto =  (photoUri) => {
-    if (!RNFS.exists(`RNFS.DocumentDirectoryPath}/Media`)) {
     RNFS.mkdir(`${RNFS.DocumentDirectoryPath}/Media`);
-    }
     if(cameraMode=="camera"){
     try {
-      
       const filePath =  `${RNFS.DocumentDirectoryPath}/Media/Obieda_${Date.now()}.jpg`;
        RNFS.moveFile(photoUri, filePath);
       console.log('Photo saved :', filePath);
@@ -326,7 +326,6 @@ else{
     }}
     else{
       try {
-        
         const filePath =  `${RNFS.DocumentDirectoryPath}/Media/Obieda_${Date.now()}.mp4`;
          RNFS.moveFile(photoUri, filePath);
         console.log('video saved:', filePath);
@@ -439,8 +438,32 @@ const FullScreenFun = (item)=>{
   const ChangeText = (newT) => {
     setNewName(newT);
   };
-  
+   
 
+  const handlePause = () => {
+    if (playerRef.current) {
+      playerRef.current
+        .getCurrentTime()
+        .then((position) => {
+          setPlaybackPosition(position);
+          setPaused(true);
+        });
+    }
+  };
+
+  const handlePlay = () => {
+    setPaused(false);
+    if (playerRef.current) {
+      playerRef.current.seek(playbackPosition);
+    }
+  };
+  const VideoPlay = () => {
+    setIsPlaying(!isPlaying);
+  };
+  const onBuffer = (buffer) => {
+    console.log('Buffering', buffer);
+    setIsBuffering(buffer.isBuffering);
+  };
 const Screen1 = ({ navigation }) => (
   <SafeAreaView style={styles.container}>
 
@@ -546,11 +569,13 @@ const Screen3 = ({ navigation }) => {
   }, []);
 return(
   <SafeAreaView style={styles.container}>
+    <Text style={{ color: "purple",fontWeight:"bold" }}>Refresh the page</Text>
     <Text style={styles.text2}>IMAGE HAS GREEN COLOR ICON</Text>
     <Text style={styles.text1}> VIDEO HAS RED COLOR ICON</Text>
     <FlatList
 ref={flatListRef1}
 data={loadPhotosVideos}
+style={{ textAlign: 'center',  padding: 20,}}
 renderItem={({ item }) => {
 const isVideo = item.name.endsWith('.mp4');
 
@@ -585,15 +610,54 @@ refreshControl={
 </SafeAreaView>
 );};
 const Screen4 = ({ navigation }) =>{
+  useEffect(() => {
+    if(passItem)
+      if(passItem.path.split('.').pop()==="mp4"){setIsVideo(true);}
+   
+  }, [isVideo]);
+  
+
 return (
   <SafeAreaView style={styles.container}>
 
-{ispassItem ? (
-  <Image source={{ uri: 'file://' + passItem.path}} style={styles.image2} />
+{ispassItem  ? (
+  isVideo ? (
+    <TouchableOpacity onPress={VideoPlay} >
+    <Video
+    //source={{ uri: 'file://' + passItem.path}}
+    source={require('../Resource/v1.mp4')} 
+    style={styles.video}
+
+    onBuffer={({ isBuffering }) => {
+      console.log('Buffering', { isBuffering });
+    }}
+    paused={!isPlaying}
+    controls
+    ref={playerRef}
+
+  />
+   </TouchableOpacity>
+
+  ):( <Image source={{ uri: 'file://' + passItem.path}} style={styles.image2} />)
+
+ 
 ) : (
   <Text>No media selected</Text>
 )}
+ <View style={styles.button}>
+ <Button
+      title="Previous"
+      onPress={() => navigation.navigate('Screen4')}
+      color="orange"
+     />
+     <Button
+      title="Next"
+      onPress={() => navigation.navigate('Screen4')}
+      color="red"
+      />
+   </View>
 </SafeAreaView>
+
 );};
     return(
         <NavigationContainer>
@@ -601,7 +665,7 @@ return (
       <Tab.Screen name="Screen1" component={Screen1}   options={{  title: 'Camera', headerTitleAlign: 'center',headerTintColor:"blue" }} />
       <Tab.Screen name="Screen2" component={Screen2}   options={{  title: 'sensors', headerTitleAlign: 'center',headerTintColor:"blue" }} />
       <Tab.Screen name="Screen3" component={Screen3}   options={{  title: 'gallery', headerTitleAlign: 'center',headerTintColor:"blue" }} />
-      <Tab.Screen name="Screen4" component={Screen4}   options={{  title: 'Media viewer', headerTitleAlign: 'center',headerTintColor:"blue" }} />
+      <Tab.Screen name="Screen4" component={Screen4}   options={{  title: 'Media viewer', headerTitleAlign: 'center',headerTintColor:"blue", tabBarButton: () => null }} />
 </Tab.Navigator>
         </NavigationContainer>
     );
@@ -630,8 +694,6 @@ const styles = StyleSheet.create({
       marginBottom: 10,
       marginTop:30,
     },
-
-
     screen2style: {
       flex: 1,
       justifyContent: 'center',
@@ -651,7 +713,6 @@ const styles = StyleSheet.create({
       marginTop: 10,
       color:"green",
       fontWeight:'bold',
-
     },
     input: {
       height: 40,
@@ -662,7 +723,15 @@ const styles = StyleSheet.create({
       color:"purple",
       fontWeight:"bold",
     },
-
+    button:{  
+      flexDirection: 'row', // Arrange children in a row
+      padding: 10, // Optional: Add padding around the container
+     
+      },
+      video: {
+        width: 300,
+        height: 200,
+      }, 
   });
 export default App;
 
