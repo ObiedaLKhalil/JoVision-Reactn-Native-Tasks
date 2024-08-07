@@ -22,7 +22,7 @@ const App = () => {
     const [loadedPhotos, setLoadedPhotos] = useState([]);
     const [loadedVideos, setLoadedVideos] = useState([]);
     const [refreshing, setRefreshing] = React.useState(false);
-    const [isPlaying, setIsPlaying] = useState(true);
+    //const [isPlaying, setIsPlaying] = useState(true);
     const [loadPhotosVideos,setloadPhotosVideos] = useState([]);
     const [newName,setNewName]=useState("");
     const [visible,setVisible]=useState(false);
@@ -33,10 +33,13 @@ const App = () => {
     const[isVideo,setIsVideo]=useState(false);
     const [isBuffering, setIsBuffering] = useState(false);
     const [paused, setPaused] = useState(false);
-    const [playbackPosition, setPlaybackPosition] = useState(0);
     const flatListRef1=useRef(null);
+    //const [playbackPosition, setPlaybackPosition] = useState(0);
+   // const [seekPosition, setSeekPosition] = useState(null); // New state for seeking
    // const flatListRef2=useRef(null);
     const playerRef = useRef(null);
+   const [pausedTime,setPausedTime]=useState();
+
     const X =5;
     const Y =3;
     const images = {
@@ -439,27 +442,87 @@ const FullScreenFun = (item)=>{
     setNewName(newT);
   };
    
-
-  const handlePause = () => {
+/*const handlePause =  () => {
     if (playerRef.current) {
-      playerRef.current
-        .getCurrentTime()
-        .then((position) => {
-          setPlaybackPosition(position);
-          setPaused(true);
-        });
+      try {
+        const position =  playerRef.current.getCurrentTime;
+        console.log(position);
+        setPlaybackPosition(position);
+        setPaused(true);
+      } catch (error) {
+        console.error("Error getting current time:", error);
+      }
     }
   };
-
   const handlePlay = () => {
     setPaused(false);
     if (playerRef.current) {
-      playerRef.current.seek(playbackPosition);
+      try {
+        playerRef.current.seek(playbackPosition);
+      } catch (error) {
+        console.error("Error seeking to playback position:", error);
+      }
+    }};*/
+  /*const VideoPlay = () => {
+    //if(isPlaying){
+   //   handlePause();
+   // }
+   // else{
+   //   handlePlay();
+  //  }
+    setPaused(!paused);
+
+  };
+*/
+
+
+
+  const handlePause = () => {
+    // Store playback position from onProgress
+    setPaused(true);
+   
+   // setPausedTime(playerRef.current.getCurrentPosition);
+   // console.log(pausedTime);
+   // setSeekPosition(playbackPosition);
+   playerRef.current.getCurrentPosition().then(position => {
+    setPausedTime(position);
+    console.log(pausedTime); // Logging the position
+  }).catch(error => {
+    console.error('Error getting current position:', error);
+  });
+  };
+
+  // Handles play action and seeks to the stored playback position
+  const handlePlay = () => {
+    setPaused(false);
+    console.log('Paused Time:', pausedTime);
+      playerRef.current.seek(pausedTime);
+    //  setPausedTime(0); // Clear seek position after using it
+    
+  };
+  const handleForward5 = () => {
+    playerRef.current.seek(playerRef.current.currentTime+5);
+  };
+const handleRewind5= () => {
+  playerRef.current.seek(playerRef.current.currentTime-5);
+};
+
+  // Update playback position while video is playing
+  /*const handleProgress = ({ currentTime }) => {
+    if (!paused) {
+      setPlaybackPosition(currentTime);
     }
   };
-  const VideoPlay = () => {
-    setIsPlaying(!isPlaying);
-  };
+*/
+
+
+
+
+
+
+
+
+
   const onBuffer = (buffer) => {
     console.log('Buffering', buffer);
     setIsBuffering(buffer.isBuffering);
@@ -614,7 +677,7 @@ const Screen4 = ({ navigation }) =>{
     if(passItem)
       if(passItem.path.split('.').pop()==="mp4"){setIsVideo(true);}
    
-  }, [isVideo]);
+  }, []);
   
 
 return (
@@ -622,21 +685,84 @@ return (
 
 {ispassItem  ? (
   isVideo ? (
-    <TouchableOpacity onPress={VideoPlay} >
+    <View>
     <Video
-    //source={{ uri: 'file://' + passItem.path}}
-    source={require('../Resource/v1.mp4')} 
+    source={{ uri: 'file://' + passItem.path}}
+   // source={require('../Resource/v1.mp4')} 
     style={styles.video}
 
     onBuffer={({ isBuffering }) => {
       console.log('Buffering', { isBuffering });
     }}
-    paused={!isPlaying}
+   // paused={!isPlaying}
     controls
     ref={playerRef}
+    paused={paused}
+    //onProgress={handleProgress}
 
   />
-   </TouchableOpacity>
+
+
+    <View style={ {justifyContent: 'center',
+      alignItems: 'center',
+      padding: 10}}>
+    <Button 
+  title={paused ? 'Play' : 'Pause'} 
+  onPress={async () => {
+    if (paused) {
+      try {
+        await setPaused(false);
+        await playerRef.current.seek(pausedTime);
+        console.log('Play function Paused Time:', pausedTime);
+      } catch (error) {
+        console.error('Error seeking to paused time:', error);
+      }
+    } else {
+      try {
+        const position = await playerRef.current.getCurrentPosition();
+        await setPaused(true);
+        await setPausedTime(position);
+        console.log('Paused Time:', position); // Logging the position
+      } catch (error) {
+        console.error('Error getting current position:', error);
+      }
+    }
+  }}
+/>
+</View>
+
+
+<View style={styles.button}>
+<Button 
+  title="forward 5 second "
+  onPress={async () => {
+      try {
+        const position = await playerRef.current.getCurrentPosition();
+        await playerRef.current.seek(position+5);
+        console.log('Paused Time:', position+5); // Logging the position
+      } catch (error) {
+        console.error('Error getting current position:', error);
+      }
+    }
+  }
+/>
+
+<Button 
+  title="rewind 5 second "
+  onPress={async () => {
+      try {
+        const position = await playerRef.current.getCurrentPosition();
+        await playerRef.current.seek(position-5);
+        console.log('Paused Time:', position-5); // Logging the position
+      } catch (error) {
+        console.error('Error getting current position:', error);
+      }
+    }
+  }
+/>
+</View>
+   
+      </View>
 
   ):( <Image source={{ uri: 'file://' + passItem.path}} style={styles.image2} />)
 
@@ -731,6 +857,7 @@ const styles = StyleSheet.create({
       video: {
         width: 300,
         height: 200,
+       
       }, 
   });
 export default App;
