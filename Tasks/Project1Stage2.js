@@ -22,12 +22,13 @@ const App = () => {
     const [loadedPhotos, setLoadedPhotos] = useState([]);
     const [loadedVideos, setLoadedVideos] = useState([]);
     const [refreshing, setRefreshing] = React.useState(false);
-    //const [isPlaying, setIsPlaying] = useState(true);
     const [loadPhotosVideos,setloadPhotosVideos] = useState([]);
     const [newName,setNewName]=useState("");
     const [visible,setVisible]=useState(false);
     const [submit,setsubmit]=useState(false);
     const[passItem,setpassItem]=useState(null);
+    const [prevItem,setPrevItem]=useState(null);
+    const [nextItem,setNextItem]=useState(null);
     const[ispassItem,setispassItem]=useState(false);
     const[isnagivate,setisnagivate]=useState(false);
     const[isVideo,setIsVideo]=useState(false);
@@ -38,8 +39,8 @@ const App = () => {
    // const [seekPosition, setSeekPosition] = useState(null); // New state for seeking
    // const flatListRef2=useRef(null);
     const playerRef = useRef(null);
-   const [pausedTime,setPausedTime]=useState();
-
+    const [pausedTime,setPausedTime]=useState();
+    const [mediaIndex,setMediaIndex]=useState();
     const X =5;
     const Y =3;
     const images = {
@@ -339,32 +340,6 @@ else{
     
     TakePhotoOrRecordVideo();
   };
-  const loadPhotosFunction = async () => {
-    const loadedPermission =  requestStoragePermissionToLoad();
-        if (!loadedPermission) {
-          console.log('Storage permission denied');
-          return;
-        }
-        
-    try {
-      const files = await RNFS.readDir(RNFS.DocumentDirectoryPath + '/Pictures');
-      const imageFiles = files.filter(file => file.isFile() && /\.(jpe?g|png)$/i.test(file.name));
-      setLoadedPhotos(imageFiles);
-    } catch (error) {
-      console.error(error);}};
-      const loadVideosFunction = async () => {
-        const loadedPermission =  requestStoragePermissionToLoad();
-            if (!loadedPermission) {
-              console.log('Storage permission denied');
-              return;
-            }
-            
-        try {
-          const files = await RNFS.readDir(RNFS.DocumentDirectoryPath + '/Movies');
-          const videoFiles = files.filter(file => file.isFile() && /\.mp4$/i.test(file.name));
-          setLoadedVideos(videoFiles);
-        } catch (error) {
-          console.error(error);}};
      const loadPhotosVideosFun =async()=>{
       const loadedPermission =  requestStoragePermissionToLoad();
   if (!loadedPermission) {
@@ -382,14 +357,14 @@ else{
 
   } catch (error) {
     console.error(error);}};
-    const handlePress =(item)=>{
+    const handlePress =(item,next,prev)=>{
       Alert.alert(
-        'this item is pressed so Choose one of these options',
+        'This item is pressed so Choose one of these options',
         'Rename,Delete,FullScreen',
         [
           { text: 'Rename', onPress: () =>RenameFun(item) },
           { text: 'Delete', onPress: () =>deleteFun(item) },
-          { text: 'FullScreen', onPress: () =>FullScreenFun(item) },
+          { text: 'FullScreen', onPress: () =>FullScreenFun(item,next,prev) },
         ],
         { cancelable: false }
       );
@@ -424,10 +399,12 @@ setsubmit(true);
 
 };
 
-const FullScreenFun = (item)=>{
+const FullScreenFun = (item,next,prev)=>{
   setisnagivate(true);
   setisnagivate(false);
   setpassItem(item); 
+  setPrevItem(prev);
+  setNextItem(next);
  setispassItem(true);
 };
       const onRefresh1 = React.useCallback(() => {
@@ -442,91 +419,6 @@ const FullScreenFun = (item)=>{
     setNewName(newT);
   };
    
-/*const handlePause =  () => {
-    if (playerRef.current) {
-      try {
-        const position =  playerRef.current.getCurrentTime;
-        console.log(position);
-        setPlaybackPosition(position);
-        setPaused(true);
-      } catch (error) {
-        console.error("Error getting current time:", error);
-      }
-    }
-  };
-  const handlePlay = () => {
-    setPaused(false);
-    if (playerRef.current) {
-      try {
-        playerRef.current.seek(playbackPosition);
-      } catch (error) {
-        console.error("Error seeking to playback position:", error);
-      }
-    }};*/
-  /*const VideoPlay = () => {
-    //if(isPlaying){
-   //   handlePause();
-   // }
-   // else{
-   //   handlePlay();
-  //  }
-    setPaused(!paused);
-
-  };
-*/
-
-
-
-  const handlePause = () => {
-    // Store playback position from onProgress
-    setPaused(true);
-   
-   // setPausedTime(playerRef.current.getCurrentPosition);
-   // console.log(pausedTime);
-   // setSeekPosition(playbackPosition);
-   playerRef.current.getCurrentPosition().then(position => {
-    setPausedTime(position);
-    console.log(pausedTime); // Logging the position
-  }).catch(error => {
-    console.error('Error getting current position:', error);
-  });
-  };
-
-  // Handles play action and seeks to the stored playback position
-  const handlePlay = () => {
-    setPaused(false);
-    console.log('Paused Time:', pausedTime);
-      playerRef.current.seek(pausedTime);
-    //  setPausedTime(0); // Clear seek position after using it
-    
-  };
-  const handleForward5 = () => {
-    playerRef.current.seek(playerRef.current.currentTime+5);
-  };
-const handleRewind5= () => {
-  playerRef.current.seek(playerRef.current.currentTime-5);
-};
-
-  // Update playback position while video is playing
-  /*const handleProgress = ({ currentTime }) => {
-    if (!paused) {
-      setPlaybackPosition(currentTime);
-    }
-  };
-*/
-
-
-
-
-
-
-
-
-
-  const onBuffer = (buffer) => {
-    console.log('Buffering', buffer);
-    setIsBuffering(buffer.isBuffering);
-  };
 const Screen1 = ({ navigation }) => (
   <SafeAreaView style={styles.container}>
 
@@ -639,11 +531,15 @@ return(
 ref={flatListRef1}
 data={loadPhotosVideos}
 style={{ textAlign: 'center',  padding: 20,}}
-renderItem={({ item }) => {
+renderItem={({ item,index }) => {
 const isVideo = item.name.endsWith('.mp4');
 
 return (
-<TouchableOpacity onPress={() => handlePress(item)}>
+<TouchableOpacity onPress={() =>{ handlePress(item,loadPhotosVideos[index+1],loadPhotosVideos[index-1]);
+
+ setMediaIndex(index);
+}
+}>
   <ImageBackground source={{ uri: 'file://' + item.path }} style={styles.image}>
     <View>
    
@@ -682,7 +578,6 @@ const Screen4 = ({ navigation }) =>{
 
 return (
   <SafeAreaView style={styles.container}>
-
 {ispassItem  ? (
   isVideo ? (
     <View>
@@ -770,17 +665,29 @@ return (
 ) : (
   <Text>No media selected</Text>
 )}
+
  <View style={styles.button}>
  <Button
-      title="Previous"
-      onPress={() => navigation.navigate('Screen4')}
-      color="orange"
-     />
-     <Button
-      title="Next"
-      onPress={() => navigation.navigate('Screen4')}
-      color="red"
-      />
+  title="Previous"
+  onPress={() => {
+
+    if (mediaIndex -1  >= 0 && mediaIndex - 1 < loadPhotosVideos.length) {
+    <Image source={{ uri: 'file://' + prevItem.path}} style={styles.image2} />
+    console.log("prev media",'file://' + prevItem.path);}
+    else{console.log("there is no item ");}
+  }}
+  color="orange"
+/>
+<Button
+  title="Next"
+  onPress={() => {
+    if (mediaIndex + 1 >= 0 && mediaIndex + 1 < loadPhotosVideos.length) {
+    <Image source={{ uri: 'file://' + nextItem.path}} style={styles.image2} />
+    console.log("next media",'file://' + nextItem.path);}
+    else{console.log("there is no item ");}
+  }}
+  color="red"
+/>
    </View>
 </SafeAreaView>
 
