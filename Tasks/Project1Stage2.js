@@ -35,12 +35,12 @@ const App = () => {
     const [isBuffering, setIsBuffering] = useState(false);
     const [paused, setPaused] = useState(false);
     const flatListRef1=useRef(null);
-    //const [playbackPosition, setPlaybackPosition] = useState(0);
-   // const [seekPosition, setSeekPosition] = useState(null); // New state for seeking
-   // const flatListRef2=useRef(null);
     const playerRef = useRef(null);
     const [pausedTime,setPausedTime]=useState();
     const [mediaIndex,setMediaIndex]=useState();
+    const[isVideoN,setIsVideoN]=useState(false);
+    const[isVideoP,setIsVideoP]=useState(false);
+    const[visibleItem,setVisibleItem]=useState(false);
     const X =5;
     const Y =3;
     const images = {
@@ -572,7 +572,11 @@ const Screen4 = ({ navigation }) =>{
   useEffect(() => {
     if(passItem)
       if(passItem.path.split('.').pop()==="mp4"){setIsVideo(true);}
-   
+   // if(nextItem)
+     // if(nextItem.path.split('.').pop()==="mp4"){setIsVideoN(true);}
+    //if(prevItem)
+     // if(prevItem.path.split('.').pop()==="mp4"){setIsVideoP(true);}
+
   }, []);
   
 
@@ -589,15 +593,10 @@ return (
     onBuffer={({ isBuffering }) => {
       console.log('Buffering', { isBuffering });
     }}
-   // paused={!isPlaying}
     controls
     ref={playerRef}
     paused={paused}
-    //onProgress={handleProgress}
-
   />
-
-
     <View style={ {justifyContent: 'center',
       alignItems: 'center',
       padding: 10}}>
@@ -670,9 +669,96 @@ return (
  <Button
   title="Previous"
   onPress={() => {
+     if (mediaIndex -1  >= 0 && mediaIndex - 1 < loadPhotosVideos.length) {
+      if(prevItem)
+        if(prevItem.path.split('.').pop()==="mp4"){setIsVideoP(true);}  
+     
+      isVideoP?
+      (
+         <View>
+         <Video
+         source={{ uri: 'file://' + passItem.path}}
+        // source={require('../Resource/v1.mp4')} 
+         style={styles.video}
+     
+         onBuffer={({ isBuffering }) => {
+           console.log('Buffering', { isBuffering });
+         }}
+        
+         controls
+         ref={playerRef}
+         paused={paused}
+         //onProgress={handleProgress}
+     
+       />
+     
+     
+         <View style={ {justifyContent: 'center',
+           alignItems: 'center',
+           padding: 10}}>
+         <Button 
+       title={paused ? 'Play' : 'Pause'} 
+       onPress={async () => {
+         if (paused) {
+           try {
+             await setPaused(false);
+             await playerRef.current.seek(pausedTime);
+             console.log('Play function Paused Time:', pausedTime);
+           } catch (error) {
+             console.error('Error seeking to paused time:', error);
+           }
+         } else {
+           try {
+             const position = await playerRef.current.getCurrentPosition();
+             await setPaused(true);
+             await setPausedTime(position);
+             console.log('Paused Time:', position); // Logging the position
+           } catch (error) {
+             console.error('Error getting current position:', error);
+           }
+         }
+       }}
+     />
+     </View>
+     
+     
+     <View style={styles.button}>
+     <Button 
+       title="forward 5 second "
+       onPress={async () => {
+           try {
+             const position = await playerRef.current.getCurrentPosition();
+             await playerRef.current.seek(position+5);
+             console.log('Paused Time:', position+5); // Logging the position
+           } catch (error) {
+             console.error('Error getting current position:', error);
+           }
+         }
+       }
+     />
+     
+     <Button 
+       title="rewind 5 second "
+       onPress={async () => {
+           try {
+             const position = await playerRef.current.getCurrentPosition();
+             await playerRef.current.seek(position-5);
+             console.log('Paused Time:', position-5); // Logging the position
+           } catch (error) {
+             console.error('Error getting current position:', error);
+           }
+         }
+       }
+     />
+     </View>
+        
+           </View>
+     
+       ):( <Image source={{ uri: 'file://' + prevItem.path}} style={styles.image2} />
 
-    if (mediaIndex -1  >= 0 && mediaIndex - 1 < loadPhotosVideos.length) {
-    <Image source={{ uri: 'file://' + prevItem.path}} style={styles.image2} />
+       )
+    
+      
     console.log("prev media",'file://' + prevItem.path);}
     else{console.log("there is no item ");}
   }}
@@ -681,8 +767,93 @@ return (
 <Button
   title="Next"
   onPress={() => {
+  
     if (mediaIndex + 1 >= 0 && mediaIndex + 1 < loadPhotosVideos.length) {
-    <Image source={{ uri: 'file://' + nextItem.path}} style={styles.image2} />
+      if(nextItem)
+        if(nextItem.path.split('.').pop()==="mp4"){setIsVideoN(true);}
+    
+      isVideoN ?
+      (
+         <View>
+         <Video
+         source={{ uri: 'file://' + nextItem.path}}
+        // source={require('../Resource/v1.mp4')} 
+         style={styles.video}
+     
+         onBuffer={({ isBuffering }) => {
+           console.log('Buffering', { isBuffering });
+         }}
+        
+         controls
+         ref={playerRef}
+         paused={paused}
+         //onProgress={handleProgress}
+     
+       />
+     
+     
+         <View style={ {justifyContent: 'center',
+           alignItems: 'center',
+           padding: 10}}>
+         <Button 
+       title={paused ? 'Play' : 'Pause'} 
+       onPress={async () => {
+         if (paused) {
+           try {
+             await setPaused(false);
+             await playerRef.current.seek(pausedTime);
+             console.log('Play function Paused Time:', pausedTime);
+           } catch (error) {
+             console.error('Error seeking to paused time:', error);
+           }
+         } else {
+           try {
+             const position = await playerRef.current.getCurrentPosition();
+             await setPaused(true);
+             await setPausedTime(position);
+             console.log('Paused Time:', position); // Logging the position
+           } catch (error) {
+             console.error('Error getting current position:', error);
+           }
+         }
+       }}
+     />
+     </View>
+     
+     
+     <View style={styles.button}>
+     <Button 
+       title="forward 5 second "
+       onPress={async () => {
+           try {
+             const position = await playerRef.current.getCurrentPosition();
+             await playerRef.current.seek(position+5);
+             console.log('Paused Time:', position+5); // Logging the position
+           } catch (error) {
+             console.error('Error getting current position:', error);
+           }
+         }
+       }
+     />
+     
+     <Button 
+       title="rewind 5 second "
+       onPress={async () => {
+           try {
+             const position = await playerRef.current.getCurrentPosition();
+             await playerRef.current.seek(position-5);
+             console.log('Paused Time:', position-5); // Logging the position
+           } catch (error) {
+             console.error('Error getting current position:', error);
+           }
+         }
+       }
+     />
+     </View>
+        
+           </View>
+     
+       ):( <Image source={{ uri: 'file://' + nextItem.path}} style={styles.image2} />)
     console.log("next media",'file://' + nextItem.path);}
     else{console.log("there is no item ");}
   }}
